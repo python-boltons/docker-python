@@ -16,4 +16,4 @@ RUN groupadd bryan && useradd -m -u 1000 -g bryan bryan
 # hadolint ignore=SC2016
 RUN echo 'export PATH=$HOME/.pyenv/bin:$PATH' >> /home/bryan/.bashrc
 # hadolint ignore=SC2016
-RUN echo 'eval "$(pyenv init -)"' >> "$HOME"/.bashrc
+RUN echo 'eval "$(pyenv init -)"' >> /home/bryan/.bashrc
