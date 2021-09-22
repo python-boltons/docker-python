@@ -11,6 +11,6 @@ RUN pyenv install 3.8.12
 RUN pyenv install 3.9.7
 RUN pyenv global 3.9.7 3.8.12 3.7.12
 # hadolint ignore=SC2016
-RUN echo 'export PATH=$HOME/.pyenv/bin:$PATH' >> "$HOME"/.bashrc
+RUN echo 'export PATH=$HOME/.pyenv/bin:$PATH' >> /bashrc
 # hadolint ignore=SC2016
-RUN echo 'eval "$(pyenv init -)"' >> "$HOME"/.bashrc
+RUN echo 'eval "$(pyenv init -)"' >> /bashrc
