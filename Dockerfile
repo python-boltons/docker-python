@@ -15,4 +15,4 @@ RUN echo 'export PATH=$HOME/.pyenv/bin:$PATH' >> "$HOME"/.bashrc
 # hadolint ignore=SC2016
 RUN echo 'eval "$(pyenv init -)"' >> "$HOME"/.bashrc
 
-RUN groupadd -r bryan && useradd --no-log-init -r -g bryan bryan
+RUN groupadd -r bryan && useradd -u 1000 --no-log-init -r -g bryan bryan
