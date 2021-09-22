@@ -16,4 +16,3 @@ RUN echo 'export PATH=$HOME/.pyenv/bin:$PATH' >> "$HOME"/.bashrc
 RUN echo 'eval "$(pyenv init -)"' >> "$HOME"/.bashrc
 
 RUN groupadd -r bryan && useradd --no-log-init -r -g bryan bryan
-USER bryan
