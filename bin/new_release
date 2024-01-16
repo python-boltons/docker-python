@@ -39,7 +39,7 @@ function run() {
 
   # Add files to git and a new git tag; then commit and push.
   run_cmd "git add -v --all"
-  echo "git commit -m 'New Release: ${versioned_image_name}'" > "${TEMP_CMD_FILE}"
+  echo "New Release: ${versioned_image_name}" > "${TEMP_CMD_FILE}"
   run_cmd "git commit --verbose --file ${TEMP_CMD_FILE}"
   run_cmd "git tag ${tag}"
   run_cmd "git push && git push --tags"
