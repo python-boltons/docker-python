@@ -1,13 +1,18 @@
 #!/bin/bash
 
+source bugyi.sh
+
 IMAGE_NAME=pythonboltons/main
-VERSIONED_IMAGE_NAME="${IMAGE_NAME}":$"$(date +%Y.%m.%d)"
+TAG=$(date +%Y.%m.%d)
 
 function run_cmd() {
   local cmd="$1"
   shift
 
-  echo "${cmd}" | tee /dev/stderr | xargs -I_ bash -c "_"
+  log::info "${cmd}"
+  if [[ "${DRY_RUN}" != true ]]; then
+      bash -c "${cmd}"
+  fi
 }
 
 TEMP_CMD_FILE="$(mktemp -t --suffix=.SUFFIX new_release.XXXXXX)"
@@ -15,9 +20,36 @@ trap "rm -f '$TEMP_CMD_FILE'" 0               # EXIT
 trap "rm -f '$TEMP_CMD_FILE'; exit 1" 2       # INT
 trap "rm -f '$TEMP_CMD_FILE'; exit 1" 1 15    # HUP TERM
 
-run_cmd "git add -v --all"
-echo "git commit -m 'New Release: ${VERSIONED_IMAGE_NAME}'" > "${TEMP_CMD_FILE}"
-run_cmd "git commit --verbose --file ${TEMP_CMD_FILE}"
-# run_cmd "docker build -t ${IMAGE_NAME} ."
-# run_cmd "docker tag ${IMAGE_NAME} ${VERSIONED_IMAGE_NAME}"
-# run_cmd "docker push -a ${IMAGE_NAME}"
+function run() {
+  if [[ "$1" == "-n" || "$1" == "--dry-run" ]]; then
+    shift
+    log::info "DRY RUN MODE ACTIVATED!"
+    DRY_RUN=true
+  fi
+
+  local version="$1"
+  shift
+
+  local tag="${TAG}"
+  if [[ -n "${version}" ]]; then
+    tag="${tag}-${version}"
+  fi
+
+  local versioned_image_name="${IMAGE_NAME}":"${tag}"
+
+  # Add files to git and a new git tag; then commit and push.
+  run_cmd "git add -v --all"
+  echo "git commit -m 'New Release: ${versioned_image_name}'" > "${TEMP_CMD_FILE}"
+  run_cmd "git commit --verbose --file ${TEMP_CMD_FILE}"
+  run_cmd "git tag ${tag}"
+  run_cmd "git push && git push --tags"
+
+  # Build, tag, and push Docker imagge.
+  run_cmd "docker build -t ${IMAGE_NAME} ."
+  run_cmd "docker tag ${IMAGE_NAME} ${versioned_image_name}"
+  run_cmd "docker push -a ${IMAGE_NAME}"
+}
+
+if [[ "${SCRIPTNAME}" == "$(basename "${BASH_SOURCE[0]}")" ]]; then
+    run "$@"
+fi
