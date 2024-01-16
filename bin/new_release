@@ -1,0 +1,23 @@
+#!/bin/bash
+
+IMAGE_NAME=pythonboltons/main
+VERSIONED_IMAGE_NAME="${IMAGE_NAME}":$"$(date +%Y.%m.%d)"
+
+function run_cmd() {
+  local cmd="$1"
+  shift
+
+  echo "${cmd}" | tee /dev/stderr | xargs -I_ bash -c "_"
+}
+
+TEMP_CMD_FILE="$(mktemp -t --suffix=.SUFFIX new_release.XXXXXX)"
+trap "rm -f '$TEMP_CMD_FILE'" 0               # EXIT
+trap "rm -f '$TEMP_CMD_FILE'; exit 1" 2       # INT
+trap "rm -f '$TEMP_CMD_FILE'; exit 1" 1 15    # HUP TERM
+
+run_cmd "git add -v --all"
+echo "git commit -m 'New Release: ${VERSIONED_IMAGE_NAME}'" > "${TEMP_CMD_FILE}"
+run_cmd "git commit --verbose --file ${TEMP_CMD_FILE}"
+# run_cmd "docker build -t ${IMAGE_NAME} ."
+# run_cmd "docker tag ${IMAGE_NAME} ${VERSIONED_IMAGE_NAME}"
+# run_cmd "docker push -a ${IMAGE_NAME}"
