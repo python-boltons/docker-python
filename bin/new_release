@@ -1,10 +1,10 @@
 #!/bin/bash
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-source "${SCRIPT_DIR}"/bugyi_20240118.sh
+BIN="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+source "${BIN}"/bugyi_20240118.sh
 
 IMAGE_NAME=pythonboltons/main
-TAG=$(date +%Y.%m.%d)
+CALENDAR_VERSION=$(date +%Y.%m.%d)
 
 function run_cmd() {
   local cmd="$1"
@@ -12,7 +12,11 @@ function run_cmd() {
 
   log::info "${cmd}"
   if [[ "${DRY_RUN}" != true ]]; then
-      bash -c "${cmd}"
+      if bash -c "${cmd}"; then
+        return 0
+      else
+        return 1
+      fi
   fi
 }
 
@@ -28,26 +32,29 @@ function run() {
     DRY_RUN=true
   fi
 
-  local version="$1"
-  shift
+  local new_version="${CALENDAR_VERSION}"
+  local i=0
+  while "${BIN}"/git_tag_exists "${new_version}"; do
+    i=$((i + 1))
 
-  local tag="${TAG}"
-  if [[ -n "${version}" ]]; then
-    tag="${tag}-${version}"
-  fi
+    new_version="${CALENDAR_VERSION}"-"${i}"
+    if [[ "${i}" -ge 100 ]]; then
+      log::error "Bad version. Maximum of 100 releases per-day: %s" "${new_version}"
+      return 1
+    fi
+  done
 
-  local versioned_image_name="${IMAGE_NAME}":"${tag}"
+  local versioned_image_name="${IMAGE_NAME}":"${new_version}"
 
   # Add files to git and a new git tag; then commit and push.
-  run_cmd "git add -v --all"
-  echo "New Release: ${versioned_image_name}" > "${TEMP_CMD_FILE}"
-  run_cmd "git commit --verbose --file ${TEMP_CMD_FILE}"
-  run_cmd "git tag ${tag}"
-  run_cmd "git push && git push --tags"
-
+  run_cmd "git add -v --all" && \
+  echo "New Release: ${versioned_image_name}" > "${TEMP_CMD_FILE}" && \
+  run_cmd "git commit --verbose --file ${TEMP_CMD_FILE}" && \
+  run_cmd "git tag ${new_version}" && \
+  run_cmd "git push && git push --tags" && \
   # Build, tag, and push Docker imagge.
-  run_cmd "docker build -t ${IMAGE_NAME} ."
-  run_cmd "docker tag ${IMAGE_NAME} ${versioned_image_name}"
+  run_cmd "docker build -t ${IMAGE_NAME} ." && \
+  run_cmd "docker tag ${IMAGE_NAME} ${versioned_image_name}" && \
   run_cmd "docker push -a ${IMAGE_NAME}"
 }
 
