@@ -1,6 +1,7 @@
 #!/bin/bash
 
-source bugyi.sh
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+source "${SCRIPT_DIR}"/bugyi_20240118.sh
 
 IMAGE_NAME=pythonboltons/main
 TAG=$(date +%Y.%m.%d)
